@@ -45,6 +45,9 @@ final class AppInfo extends App
     /** @var Category|null Family category or null/ */
     private $categoryFamily;
 
+    /** @var array Application Tags. */
+    private $tags;
+
     /** @var Video|null Promo video or null. */
     private $video;
 
@@ -127,6 +130,7 @@ final class AppInfo extends App
         $this->cover = $builder->getCover();
         $this->category = $builder->getCategory();
         $this->categoryFamily = $builder->getCategoryFamily();
+        $this->tags = $builder->getTags();
         $this->privacyPoliceUrl = $builder->getPrivacyPoliceUrl();
         $this->video = $builder->getVideo();
         $this->recentChanges = $builder->getRecentChanges();
@@ -230,6 +234,16 @@ final class AppInfo extends App
     public function getCategoryFamily(): ?Category
     {
         return $this->categoryFamily;
+    }
+
+    /**
+     * Returns the category of the application.
+     *
+     * @return array|null category of application or `null`
+     */
+    public function getTags(): ?array
+    {
+        return $this->tags;
     }
 
     /**
@@ -496,6 +510,7 @@ final class AppInfo extends App
         $array['cover'] = $this->cover !== null ? $this->cover->getUrl() : null;
         $array['category'] = $this->category->asArray();
         $array['categoryFamily'] = $this->categoryFamily !== null ? $this->categoryFamily->asArray() : null;
+        $array['tags'] = $this->tags;
         $array['video'] = $this->video !== null ? $this->video->asArray() : null;
         $array['privacyPoliceUrl'] = $this->privacyPoliceUrl;
         $array['recentChange'] = $this->recentChanges;

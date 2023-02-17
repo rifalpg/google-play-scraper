@@ -77,6 +77,9 @@ class AppBuilder
     /** @var Category|null */
     private $categoryFamily;
 
+    /** @var array|null */
+    private $tags;
+
     /** @var Video|null */
     private $video;
 
@@ -469,6 +472,26 @@ class AppBuilder
     public function setCategoryFamily(?Category $categoryFamily): self
     {
         $this->categoryFamily = $categoryFamily;
+
+        return $this;
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getTags(): ?array
+    {
+        return $this->tags;
+    }
+
+    /**
+     * @param array|null $tags
+     *
+     * @return AppBuilder
+     */
+    public function setTags(?array $tags): self
+    {
+        $this->tags = $tags;
 
         return $this;
     }

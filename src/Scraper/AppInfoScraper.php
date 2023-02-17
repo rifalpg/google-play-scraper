@@ -37,13 +37,13 @@ use Psr\Http\Message\ResponseInterface;
 class AppInfoScraper implements ParseHandlerInterface
 {
     /**
-     * @param RequestInterface  $request
+     * @param RequestInterface $request
      * @param ResponseInterface $response
-     * @param array             $options
-     *
-     * @throws \Nelexa\GPlay\Exception\GooglePlayException
+     * @param array $options
      *
      * @return AppInfo
+     * @throws \Nelexa\GPlay\Exception\GooglePlayException
+     *
      */
     public function __invoke(RequestInterface $request, ResponseInterface $response, array &$options = []): AppInfo
     {
@@ -56,7 +56,7 @@ class AppInfoScraper implements ParseHandlerInterface
             if (isset($data[1][2][72][0][1])) {
                 $appInfo = $data[1][2];
             } elseif (isset($data[1][2][136][0][1][0])) {
-                $editorsChoice = (bool) $data[1][2][136][0][1][0];
+                $editorsChoice = (bool)$data[1][2][136][0][1][0];
             }
         }
 
@@ -79,9 +79,9 @@ class AppInfoScraper implements ParseHandlerInterface
         $summary = $this->extractSummary($appInfo);
         $installsText = $appInfo[13][0] ?? null;
         $installs = $appInfo[13][2] ?? 0;
-        $score = (float) ($appInfo[51][0][1] ?? 0);
-        $numberVoters = (int) ($appInfo[51][2][1] ?? 0);
-        $numberReviews = (int) ($appInfo[51][3][1] ?? 0);
+        $score = (float)($appInfo[51][0][1] ?? 0);
+        $numberVoters = (int)($appInfo[51][2][1] ?? 0);
+        $numberReviews = (int)($appInfo[51][3][1] ?? 0);
         $histogramRating = null;
         if (isset($appInfo[51][1])) {
             $histogramRating = $this->extractHistogramRating($appInfo[51][1]);
@@ -93,7 +93,7 @@ class AppInfoScraper implements ParseHandlerInterface
         $priceText = $scriptDataPrice[0][2] ?? null;
 
         $offersIAPCost = $appInfo[19][0] ?? null;
-        $containsAds = (bool) ($appInfo[48][0] ?? false);
+        $containsAds = (bool)($appInfo[48][0] ?? false);
 
         $androidVersion = $appInfo[140][1][1][0][0][1] ?? null;
         $appVersion = $appInfo[140][0][0][0] ?? null;
@@ -110,7 +110,8 @@ class AppInfoScraper implements ParseHandlerInterface
         $cover = $this->extractCover($appInfo);
         $screenshots = $this->extractScreenshots($appInfo);
         $video = $this->extractVideo($appInfo);
-        $contentRating = $appInfo[111][1] ?? '';
+        $tags = $this->getTags($appInfo[118]);
+        $contentRating = $appInfo[51][0][0] ?? '';
         $released = $this->convertDate($appInfo[10][1][0] ?? null);
         $updated = $this->convertDate($appInfo[145][0][1][0] ?? null);
         $recentChanges = $this->extractRecentChanges($appInfo);
@@ -130,6 +131,7 @@ class AppInfoScraper implements ParseHandlerInterface
             ->setDeveloper($developer)
             ->setCategory($category)
             ->setCategoryFamily($categoryFamily)
+            ->setTags($tags)
             ->setVideo($video)
             ->setRecentChanges($recentChanges)
             ->setEditorsChoice($editorsChoice)
@@ -157,8 +159,7 @@ class AppInfoScraper implements ParseHandlerInterface
             ->setUpdated($updated)
             ->setNumberReviews($numberReviews)
             ->setReviews($reviews)
-            ->buildDetailInfo()
-        ;
+            ->buildDetailInfo();
     }
 
     /**
@@ -206,8 +207,8 @@ class AppInfoScraper implements ParseHandlerInterface
     private function extractCategory(array $data): ?Category
     {
         if (isset($data[1][4][2], $data[0], $data[2])) {
-            $categorySlug = (string) $data[2];
-            $categoryName = (string) $data[0];
+            $categorySlug = (string)$data[2];
+            $categoryName = (string)$data[0];
 
             return new Category($categorySlug, $categoryName);
         }
@@ -239,7 +240,7 @@ class AppInfoScraper implements ParseHandlerInterface
     protected function extractPrice(array $scriptDataPrice): ?float
     {
         return isset($scriptDataPrice[0][0])
-            ? (float) ($scriptDataPrice[0][0] / 1000000)
+            ? (float)($scriptDataPrice[0][0] / 1000000)
             : 0.0;
     }
 
@@ -290,8 +291,8 @@ class AppInfoScraper implements ParseHandlerInterface
     private function extractVideo(array $data): ?Video
     {
         if (isset($data[100][0][0][4], $data[100][0][1][3][3])) {
-            $videoThumb = (string) $data[100][0][1][3][2];
-            $youtubeId = (string) $data[100][0][4];
+            $videoThumb = (string)$data[100][0][1][3][2];
+            $youtubeId = (string)$data[100][0][4];
             $youtubeId = str_replace('yt:', '', strtok($youtubeId, '?'));
             $videoUrl = 'https://www.youtube.com/embed/' . $youtubeId . '?ps=play&vq=large&rel=0&autohide=1&showinfo=0';
 
@@ -353,5 +354,22 @@ class AppInfoScraper implements ParseHandlerInterface
         }
 
         return ReviewsExtractor::extractReviews($appId, $data);
+    }
+
+    private function getTags(array $data, $tags = [])
+    {
+        foreach ($data as $d) {
+            if (!empty($d)) {
+                if (is_array($d[0])) {
+                    $tags = $this->getTags($d, $tags);
+                } else {
+                    if(!empty($d[0])){
+                        $tags[] = $d[0];
+                    }
+                }
+            }
+        }
+
+        return $tags;
     }
 }
